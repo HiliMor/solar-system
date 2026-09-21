@@ -7,4 +7,5 @@ dist/
 # They are third-party imagery (CC BY 4.0) and ~60 MB, so they are not committed.
 public/textures/*
 !public/textures/.gitkeep
+!public/textures/ATTRIBUTION.txt
 .captures/

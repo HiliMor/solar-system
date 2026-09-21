@@ -449,11 +449,30 @@ export function mountUI( app, container ) {
 
 	const minorLabels = toggle( 'Label minor bodies', true, ( v ) => labels.setShowMinor( v ) );
 
+	// --- credits ------------------------------------------------------------
+	// CC BY 4.0 asks for the creator, the licence, a link to the material, and
+	// a note of any changes. It is cheap to do properly and the maps are the
+	// reason the planets look like themselves.
+	const credits = el( 'div', 'credits-block' );
+	credits.innerHTML = `
+		<p><strong>Surface maps</strong> by
+			<a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noopener">Solar System Scope</a>,
+			licensed <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>,
+			built from NASA/JPL-Caltech, USGS and ESA imagery.
+			Two maps were converted from TIFF to PNG so browsers can read them; the rest are unaltered.
+			Ceres, Eris, Haumea and Makemake are artistic impressions, not survey data.</p>
+		<p><strong>Ephemerides</strong> from Standish, JPL/Caltech. <strong>Rotation models</strong> from the
+			IAU Working Group, 2015. <strong>Lunar theory</strong> abridged from ELP-2000/82.
+			<strong>Physical data</strong> from the NASA planetary fact sheets.</p>
+		<p><strong>Engine</strong> <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>, MIT.
+			This project\u2019s own code is MIT.</p>`;
+
 	settingsBody.append(
 		group( 'Scale', scaleSlider.root, scaleNote, sizeSlider.root, sunSlider.root ),
 		group( 'Show', ...toggleRows, minorLabels.root ),
 		group( 'Image', autoExposure.root, exposureSlider.root, starSlider.root ),
-		group( 'Sound', audioToggle.root, audioNote, volumeSlider.root, resonance )
+		group( 'Sound', audioToggle.root, audioNote, volumeSlider.root, resonance ),
+		group( 'Credits', credits )
 	);
 
 	const settingsToggle = el( 'button', 'settings-toggle' );

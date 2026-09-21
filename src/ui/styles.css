@@ -923,3 +923,8 @@ input[type='range']::-moz-range-thumb {
 .panel-section .btn { width: 100%; margin-top: 4px; padding: 7px 9px; font-size: 11.5px; }
 .panel-section .btn:disabled { opacity: 0.4; cursor: default; }
 .panel-section .panel-note { margin: 2px 0 11px; }
+
+.credits-block { font-size: 10.5px; line-height: 1.65; color: var(--text-faint); }
+.credits-block p { margin: 0 0 9px; }
+.credits-block p:last-child { margin-bottom: 0; }
+.credits-block strong { color: var(--text-dim); font-weight: 500; }

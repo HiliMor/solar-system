@@ -47,8 +47,50 @@ const MANIFEST = {
 	'stars_milky_way.jpg':  [ '8k_stars_milky_way.jpg', '2k_stars_milky_way.jpg' ]
 };
 
+/**
+ * Attribution, written next to the files so it travels with them.
+ * CC BY 4.0 asks for the creator, a link to the licence, a link to the
+ * material, and a note of any changes made.
+ */
+const ATTRIBUTION = `Planetary and stellar surface maps in this directory are by Solar System Scope
+  https://www.solarsystemscope.com/textures/
+
+Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0)
+  https://creativecommons.org/licenses/by/4.0/
+
+They are based on imagery by NASA/JPL-Caltech, USGS Astrogeology and ESA.
+
+Changes made to the originals:
+  - earth_normal.png and earth_specular.png were converted from the published
+    TIFF files to PNG, because browsers cannot decode TIFF. earth_specular.png
+    was additionally collapsed to a single greyscale channel, which it already
+    was in content.
+  - No other file has been altered. Some are fetched at a lower published
+    resolution than the maximum; see scripts/fetch-textures.mjs.
+
+Files named "*_fictional" (Ceres, Eris, Haumea, Makemake) are, as the name
+says, artistic impressions rather than survey data, and are labelled as such in
+the interface.
+`;
+
 const quietIfPresent = process.argv.includes( '--quiet-if-present' );
 const force = process.argv.includes( '--force' );
+
+/**
+ * `--size 2k` takes the smallest published version of every map, which brings
+ * the set from about 100 MB down to 13. That is what the deployed build uses:
+ * nobody should wait on a hundred megabytes before seeing a planet, and at the
+ * distances most of the scene is viewed from, 2k is indistinguishable.
+ */
+const sizeIndex = process.argv.indexOf( '--size' );
+const preferredSize = sizeIndex >= 0 ? process.argv[ sizeIndex + 1 ] : null;
+
+/** Reorders a candidate list to put the requested resolution first. */
+function preferSize( candidates ) {
+	if ( ! preferredSize ) return candidates;
+	const preferred = candidates.filter( ( c ) => c.startsWith( `${ preferredSize }_` ) );
+	return preferred.length ? [ ...preferred, ...candidates ] : candidates;
+}
 
 const exists = async ( p ) => { try { return ( await stat( p ) ).size > 1024; } catch { return false; } };
 const mb = ( n ) => `${ ( n / 1048576 ).toFixed( 1 ) } MB`;
@@ -126,7 +168,9 @@ async function main() {
 		if ( all.every( Boolean ) ) return;
 	}
 
-	console.log( `Fetching ${ entries.length } texture maps into public/textures/ ...` );
+	await writeFile( join( OUT, 'ATTRIBUTION.txt' ), ATTRIBUTION );
+
+	console.log( `Fetching ${ entries.length } texture maps into public/textures/${ preferredSize ? ` at ${ preferredSize }` : '' } ...` );
 	console.log( 'Source: Solar System Scope (CC BY 4.0), derived from NASA/JPL/USGS imagery.\n' );
 
 	let total = 0, downloaded = 0, skipped = 0;
@@ -138,7 +182,7 @@ async function main() {
 		while ( queue.length ) {
 			const [ local, candidates ] = queue.shift();
 			try {
-				const r = await fetchOne( local, candidates );
+				const r = await fetchOne( local, preferSize( candidates ) );
 				if ( r.skipped ) { skipped ++; console.log( `  = ${ local } (already present)` ); }
 				else { downloaded ++; total += r.bytes; console.log( `  + ${ local.padEnd( 22 ) } ${ mb( r.bytes ).padStart( 9 ) }  <- ${ r.remote }` ); }
 			} catch ( err ) {

@@ -17,11 +17,17 @@ Built with three.js and WebGPU. Positions come from real ephemerides rather than
 art direction; the asteroid belt is forty-two thousand individual orbits solved
 on the GPU every frame, Kirkwood gaps and all.
 
+**[Try it → hilimor.github.io/solar-system](https://hilimor.github.io/solar-system/)**
+
 ```bash
 npm install
 npm run textures     # fetches ~100 MB of surface maps, once
 npm run dev
 ```
+
+The deployed build uses the 2k maps (~13 MB) so the page loads in seconds;
+`npm run textures` locally takes the 8k set, which is worth it up close. Add
+`--size 2k` to match the deployed build.
 
 Needs a browser with WebGPU. Chrome 113+, Edge 113+ and Safari 18+ qualify; it
 falls back to WebGL2 elsewhere, with everything intact but slower.
@@ -265,8 +271,18 @@ writes a PNG to `.captures/`. Dev only; not part of the build.
   ch. 47.
 - **Physical data** — NASA planetary fact sheets; JPL Small-Body Database.
 - **Surface maps** — [Solar System Scope](https://www.solarsystemscope.com/textures/),
-  CC BY 4.0, built from NASA/JPL-Caltech, USGS and ESA imagery.
+  licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), built from
+  NASA/JPL-Caltech, USGS Astrogeology and ESA imagery. Two maps were converted
+  from the published TIFF to PNG because browsers cannot decode TIFF; nothing
+  else was altered. The Ceres, Eris, Haumea and Makemake maps are artistic
+  impressions rather than survey data, and are labelled as such in the app.
+  Full notice in `public/textures/ATTRIBUTION.txt`.
 - **Engine** — [three.js](https://threejs.org) r186, WebGPURenderer and TSL.
 
-Code is MIT (see `LICENSE`). The texture maps are not — they stay CC BY 4.0 and
-are not committed to this repository.
+Code is MIT (see `LICENSE`). The texture maps are not — they stay CC BY 4.0,
+and they are not committed here: the deploy fetches them at build time, so a
+hundred megabytes of third-party binaries never enter the git history.
+
+CC BY 4.0 permits redistribution and commercial use, so publishing this is fine
+provided the attribution above travels with it. It appears in the app's credits
+panel, in the page footer, and in `ATTRIBUTION.txt` beside the files.

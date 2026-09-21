@@ -1,0 +1,19 @@
+Planetary and stellar surface maps in this directory are by Solar System Scope
+  https://www.solarsystemscope.com/textures/
+
+Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0)
+  https://creativecommons.org/licenses/by/4.0/
+
+They are based on imagery by NASA/JPL-Caltech, USGS Astrogeology and ESA.
+
+Changes made to the originals:
+  - earth_normal.png and earth_specular.png were converted from the published
+    TIFF files to PNG, because browsers cannot decode TIFF. earth_specular.png
+    was additionally collapsed to a single greyscale channel, which it already
+    was in content.
+  - No other file has been altered. Some are fetched at a lower published
+    resolution than the maximum; see scripts/fetch-textures.mjs.
+
+Files named "*_fictional" (Ceres, Eris, Haumea, Makemake) are, as the name
+says, artistic impressions rather than survey data, and are labelled as such in
+the interface.
