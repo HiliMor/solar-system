@@ -42,7 +42,18 @@ export function createAtmosphereMaterial( def, options = {} ) {
 		/** Surface and atmosphere-top radii, world units. */
 		surfaceRadius: uniform( float( 1 ) ),
 		topRadius: uniform( float( 1.03 ) ),
-		strength: uniform( float( atm.density ?? 1 ) )
+		strength: uniform( float( atm.density ?? 1 ) ),
+		/**
+		 * Light reaching this air from outside an eclipse shadow.
+		 *
+		 * An umbra is only about a hundred kilometres across, so even at
+		 * totality the atmosphere a short way off is in full sunlight and
+		 * scatters into the observer's line of sight. Without this the sky goes
+		 * to absolute black at second contact, which is not what totality looks
+		 * like -- it looks like deep twilight, with the horizon still lit all
+		 * the way round.
+		 */
+		scatteredFloor: uniform( float( 0 ) )
 	};
 
 	const STEPS = options.quality === 'low' ? 8 : 16;
@@ -69,6 +80,22 @@ export function createAtmosphereMaterial( def, options = {} ) {
 	const betaMie = vec3( haze ).mul( float( ( atm.mie ?? 0.22 ) * MIE_CALIBRATION ) );
 	const g = float( atm.g ?? 0.76 );
 	const scaleHeightFactor = float( atm.scaleHeight ?? 0.22 );
+
+	/**
+	 * Multiple scattering.
+	 *
+	 * The integral above follows light that scatters exactly once. Roughly half
+	 * the brightness of a real daytime sky comes from photons that scattered
+	 * several times, plus light bounced up off the ground -- so single
+	 * scattering alone gives a sky about three times too dark and too saturated.
+	 * Measured against a sunlit white surface, a clear zenith sits near 0.09;
+	 * this term is scaled to land there.
+	 *
+	 * It is added isotropically, which is what repeated scattering tends toward,
+	 * and that is also why the extra light is whiter than the single-scattered
+	 * blue.
+	 */
+	const multipleScattering = float( atm.multipleScattering ?? 2.7 );
 
 	material.colorNode = Fn( () => {
 
@@ -154,10 +181,18 @@ export function createAtmosphereMaterial( def, options = {} ) {
 
 		} );
 
-		const visibility = solarVisibility( positionWorld, sunDir, L.sunAngularRadius, L.occluders );
+		const directVisibility = solarVisibility( positionWorld, sunDir, L.sunAngularRadius, L.occluders );
+		const visibility = directVisibility.add(
+			extras.scatteredFloor.mul( oneMinus( directVisibility ) )
+		);
 
-		const scattered = betaRayleigh.mul( accumR ).mul( phaseR )
+		const single = betaRayleigh.mul( accumR ).mul( phaseR )
 			.add( betaMie.mul( accumM ).mul( phaseM ) );
+
+		const multi = betaRayleigh.mul( accumR ).add( betaMie.mul( accumM ) )
+			.mul( float( 1 / ( 4 * Math.PI ) ) ).mul( multipleScattering );
+
+		const scattered = single.add( multi );
 
 		// The phase functions carry a 1/4pi, so the result is a radiance ratio
 		// L/E. Surfaces in this scene are shaded as albedo * cos(theta), which is

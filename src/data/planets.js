@@ -117,7 +117,7 @@ export const PLANETS = [
 		cloudAltitude: 12,
 		cloudOpacity: 0.92,
 		cloudRotationPeriod: 24,
-		atmosphere: { height: 90, color: 0x6ea8ff, haze: 0xfff2e2, density: 1, rayleigh: 1.0, mie: 0.25, g: 0.76 },
+		atmosphere: { height: 90, color: 0x6ea8ff, haze: 0xfff2e2, density: 1, rayleigh: 1.0, mie: 0.09, g: 0.76 },
 		color: 0x3f6fbf,
 		facts: {
 			'Mean radius': '6,371.0 km',

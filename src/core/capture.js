@@ -1,4 +1,4 @@
-import { RenderTarget, UnsignedByteType, LinearFilter, NoColorSpace, SRGBColorSpace } from 'three';
+import { RenderTarget, UnsignedByteType, LinearFilter, NoColorSpace } from 'three';
 
 /**
  * Dev-only frame capture.
@@ -19,11 +19,15 @@ export async function captureFrame( app, { name = 'frame', width, height, post =
 	const w = Math.max( 64, Math.round( requested / 64 ) * 64 );
 	const h = height || Math.round( w * window.innerHeight / window.innerWidth );
 
+	// NoColorSpace, not SRGBColorSpace. The render pipeline's output pass has
+	// already applied tone mapping and the sRGB transfer function, so asking the
+	// target to encode again would apply it twice -- which lifts midtones by
+	// about 1.7x and bleaches the colour out of everything.
 	const target = new RenderTarget( w, h, {
 		type: UnsignedByteType,
 		minFilter: LinearFilter,
 		magFilter: LinearFilter,
-		colorSpace: SRGBColorSpace
+		colorSpace: NoColorSpace
 	} );
 
 	// The scene pass inside the pipeline only re-renders when the node frame id
@@ -50,14 +54,12 @@ export async function captureFrame( app, { name = 'frame', width, height, post =
 	const rows = Math.floor( pixels.length / stride );
 	if ( rows !== h ) console.warn( `capture: expected ${ h } rows, got ${ rows }` );
 
-	// Readback is bottom-up; flip into image order.
-	const flipped = new Uint8ClampedArray( rows * stride );
-	for ( let y = 0; y < rows; y ++ ) {
-		flipped.set( pixels.subarray( ( rows - 1 - y ) * stride, ( rows - y ) * stride ), y * stride );
-	}
-
+	// The WebGPU backend hands back rows already in image order, top first --
+	// unlike WebGL, where readback is bottom-up. No flip.
 	const canvas = new OffscreenCanvas( w, rows );
-	canvas.getContext( '2d' ).putImageData( new ImageData( flipped, w, rows ), 0, 0 );
+	canvas.getContext( '2d' ).putImageData(
+		new ImageData( new Uint8ClampedArray( pixels.buffer, pixels.byteOffset, rows * stride ), w, rows ), 0, 0
+	);
 	const blob = await canvas.convertToBlob( { type: 'image/png' } );
 
 	target.dispose();

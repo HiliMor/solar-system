@@ -255,6 +255,8 @@ button, input, select {
 
 /* ---------- body list ---------- */
 
+.bodies[hidden] { display: none; }
+
 .bodies {
 	position: absolute;
 	top: 16px;
@@ -629,3 +631,177 @@ input[type='range']::-moz-range-thumb {
 	line-height: 1;
 }
 .notice button:hover { background: rgba(255, 255, 255, 0.16); color: var(--text); }
+
+/* ---------- standing on a surface ---------- */
+
+.ui-root.is-ground .footer { right: 16px; }
+
+.ground-panel {
+	position: absolute;
+	left: 16px;
+	top: 16px;
+	width: 268px;
+	max-height: calc(100vh - 92px);
+	overflow-y: auto;
+	padding: 14px 16px 14px;
+	background: var(--panel);
+	backdrop-filter: blur(18px) saturate(140%);
+	-webkit-backdrop-filter: blur(18px) saturate(140%);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	scrollbar-width: thin;
+}
+
+.ground-heading {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	padding-bottom: 11px;
+	border-bottom: 1px solid var(--border);
+}
+
+.ground-compass {
+	font-family: var(--mono);
+	font-size: 19px;
+	letter-spacing: 0.03em;
+	font-variant-numeric: tabular-nums;
+}
+
+.ground-detail {
+	font-family: var(--mono);
+	font-size: 10.5px;
+	color: var(--text-faint);
+}
+
+.ground-place { margin-top: 12px; }
+.ground-place-name { font-size: 14px; font-weight: 600; }
+.ground-place-coords {
+	font-family: var(--mono);
+	font-size: 10px;
+	color: var(--text-faint);
+	margin-top: 3px;
+	letter-spacing: 0.02em;
+}
+.ground-place-note {
+	margin: 9px 0 0;
+	font-size: 11.5px;
+	line-height: 1.6;
+	color: var(--text-dim);
+}
+
+/* light level */
+
+.ground-light { margin-top: 14px; }
+
+.ground-light-label {
+	font-size: 11px;
+	color: var(--text-dim);
+	margin-bottom: 5px;
+	font-variant-numeric: tabular-nums;
+}
+
+.ground-light-bar {
+	height: 4px;
+	border-radius: 3px;
+	background: rgba(255, 255, 255, 0.09);
+	overflow: hidden;
+}
+
+.ground-light-fill {
+	height: 100%;
+	width: 100%;
+	background: linear-gradient(90deg, #d98a3a, #ffe6a8);
+	transition: width 0.12s linear;
+}
+
+.ground-light.is-partial .ground-light-label { color: var(--warn); }
+.ground-light.is-total .ground-light-label {
+	color: #ff9b6b;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+}
+.ground-light.is-total .ground-light-fill { background: #5a2a18; }
+
+/* what is up */
+
+.sky-list {
+	margin-top: 14px;
+	padding-top: 12px;
+	border-top: 1px solid var(--border);
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+}
+
+.sky-row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 10px;
+	width: 100%;
+	padding: 3px 6px;
+	margin: 0 -6px;
+	background: none;
+	border: 0;
+	border-radius: 5px;
+	cursor: pointer;
+	text-align: left;
+	color: var(--text-dim);
+	font-size: 11.5px;
+}
+.sky-row[hidden] { display: none; }
+.sky-row:hover { background: rgba(255, 255, 255, 0.06); color: var(--text); }
+
+.sky-name { flex: none; }
+.sky-pos {
+	font-family: var(--mono);
+	font-size: 10px;
+	color: var(--text-faint);
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+/* picker */
+
+.ground-picker {
+	margin-top: 15px;
+	padding-top: 13px;
+	border-top: 1px solid var(--border);
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
+}
+
+.ground-select {
+	width: 100%;
+	padding: 7px 9px;
+	background: rgba(255, 255, 255, 0.055);
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	font-size: 12px;
+	cursor: pointer;
+	appearance: none;
+}
+.ground-select:hover { border-color: var(--border-strong); }
+.ground-select option, .ground-select optgroup { background: var(--panel-solid); }
+
+.ground-picker .btn { width: 100%; padding: 6px 9px; font-size: 11.5px; }
+
+.btn-stand {
+	display: block;
+	width: 100%;
+	margin-top: 12px;
+	padding: 7px 10px;
+	font-size: 11.5px;
+	background: var(--accent-dim);
+	border-color: rgba(111, 168, 255, 0.35);
+}
+.btn-stand[hidden] { display: none; }
+
+@media (max-width: 900px) {
+	.ground-panel { width: 214px; max-height: 60vh; }
+}
+
+@media (max-width: 640px) {
+	.ground-panel { top: auto; bottom: 14px; left: 14px; right: 14px; width: auto; max-height: 40vh; }
+}

@@ -87,7 +87,17 @@ export function createSunMaterial( def, textures, timeUniform ) {
 		const rim = pow( oneMinus( mu ), 6 ).mul( 0.9 );
 		base = base.add( vec3( 1.0, 0.32, 0.16 ).mul( rim ) );
 
-		return vec4( base.mul( limb ).mul( extras.brightness ).mul( extras.exposureBias ).mul( 7.5 ), 1 );
+		// The photosphere is rendered far brighter than the scene's white point.
+		// It has to be: it is about a hundred thousand times brighter than a
+		// sunlit surface, and anything dimmer reads as a warm ball rather than
+		// as something you cannot look at. As it saturates, it is pushed toward
+		// white -- every eye and every sensor loses hue long before it stops
+		// responding, which is why the Sun looks white and not orange.
+		const intensity = base.mul( limb ).mul( extras.brightness ).mul( 42 );
+		const whiteOut = saturate( limb.mul( extras.brightness ).mul( 1.4 ) );
+		const shown = mix( intensity, vec3( 1, 1, 1 ).mul( intensity.r.add( intensity.g ).add( intensity.b ).div( 3 ) ), whiteOut.mul( 0.8 ) );
+
+		return vec4( shown.mul( extras.exposureBias ), 1 );
 
 	} )();
 
@@ -133,7 +143,7 @@ export function createCoronaMaterial( timeUniform ) {
 
 		// The K-corona is a millionth of the photosphere's surface brightness and
 		// falls off steeply; anything flatter than this reads as a lens flare.
-		const falloff = pow( max( impact, float( 1.0 ) ), -3.4 );
+		const falloff = pow( max( impact, float( 1.0 ) ), -2.4 );
 
 		// Streamers: brighter at the equator, structured in longitude.
 		const dir = normalize( closest );
@@ -148,7 +158,12 @@ export function createCoronaMaterial( timeUniform ) {
 
 		const tint = mix( color( 0xfff0d0 ), color( 0xbcd4ff ), saturate( impact.sub( 1.4 ).mul( 0.35 ) ) );
 
-		return vec4( tint.mul( intensity ).mul( extras.strength ).mul( extras.exposureBias ).mul( 0.085 ), 1 );
+		// Corona brightness is set against the two skies it has to work in. Near
+		// the limb it is roughly a millionth of the photosphere, which puts it
+		// well under a daylit sky -- so it stays invisible during the partial
+		// phases, exactly as it does in life -- and several times brighter than
+		// the sky inside an umbra, so it appears at second contact.
+		return vec4( tint.mul( intensity ).mul( extras.strength ).mul( extras.exposureBias ).mul( 0.016 ), 1 );
 
 	} )();
 

@@ -4,6 +4,8 @@ import { DWARF_PLANETS, COMETS, SPACECRAFT } from '../data/smallBodies.js';
 import { AU_KM, DEG, SUN_RADIUS_KM } from '../data/constants.js';
 import { formatDate, formatRate } from '../physics/time.js';
 import { Labels } from './Labels.js';
+import { createGroundPanel } from './GroundPanel.js';
+import { STANDABLE, locationsFor } from '../data/locations.js';
 
 /**
  * Time-rate ladder, in simulated days per real second.
@@ -29,6 +31,19 @@ const RATES = [
 ];
 
 const SIZE_PRESETS = [ 1, 2, 5, 10, 25, 60, 150 ];
+
+const ORBIT_HELP = `
+	<strong>Controls</strong>
+	<span>drag \u2014 orbit</span><span>scroll \u2014 zoom</span><span>click \u2014 focus a body</span>
+	<span>space \u2014 pause</span><span>, / . \u2014 time rate</span><span>r \u2014 reverse</span>
+	<span>n \u2014 now</span><span>/ \u2014 search</span><span>l \u2014 labels</span><span>o \u2014 orbits</span>
+	<span>t \u2014 true scale</span><span>h \u2014 hide this</span>`;
+
+const GROUND_HELP = `
+	<strong>Looking up</strong>
+	<span>drag \u2014 turn your head</span><span>scroll \u2014 zoom, like binoculars</span>
+	<span>space \u2014 pause</span><span>, / . \u2014 time rate</span><span>esc \u2014 back to orbit</span>
+	<span>h \u2014 hide this</span>`;
 
 const el = ( tag, className, text ) => {
 	const node = document.createElement( tag );
@@ -105,7 +120,11 @@ export function mountUI( app, container ) {
 		return b;
 	};
 
-	let rateIndex = 5;
+	// One hour per second: Earth turns once every 24 seconds and the Moon comes
+	// round in 11 minutes, so the system is visibly alive without the surface
+	// blurring. A day per second -- a full rotation every second -- is too fast
+	// to read anything by.
+	let rateIndex = 3;
 	let direction = 1;
 
 	const applyRate = () => {
@@ -137,12 +156,15 @@ export function mountUI( app, container ) {
 	// ------------------------------------------------------- body info panel
 	const info = el( 'aside', 'info' );
 	const infoName = el( 'h2', 'info-name' );
+	const standButton = el( 'button', 'btn btn-stand' );
+	standButton.type = 'button';
+	standButton.textContent = 'Stand on the surface';
 	const infoKind = el( 'div', 'info-kind' );
 	const infoNote = el( 'p', 'info-note' );
 	const infoLive = el( 'dl', 'info-live' );
 	const infoFacts = el( 'dl', 'info-facts' );
 	const infoCaveat = el( 'p', 'info-caveat' );
-	info.append( infoName, infoKind, infoLive, infoNote, infoFacts, infoCaveat );
+	info.append( infoName, infoKind, standButton, infoLive, infoNote, infoFacts, infoCaveat );
 
 	const KIND_LABEL = {
 		star: 'Star', planet: 'Planet', moon: 'Natural satellite',
@@ -161,6 +183,22 @@ export function mountUI( app, container ) {
 	function renderInfo( target ) {
 
 		const def = defFor( target.id ) || target.def || {};
+
+		// Anything solid can be stood on. Where there are named places, the
+		// first is offered by name -- it reads better than a pair of numbers.
+		const standable = STANDABLE.has( target.id );
+		standButton.hidden = ! standable;
+		if ( standable ) {
+			const places = locationsFor( target.id );
+			standButton.textContent = places.length
+				? `Stand at ${ places[ 0 ].name }`
+				: `Stand on ${ target.name }`;
+			standButton.onclick = () => {
+				const place = places[ 0 ];
+				if ( place ) app.enterGround( place.body, place.lat, place.lon, place.alt, place.name );
+				else app.enterGround( target.id, 0, 0, 0, null );
+			};
+		}
 
 		infoName.textContent = def.name || target.name;
 
@@ -409,7 +447,19 @@ export function mountUI( app, container ) {
 	const rightColumn = el( 'div', 'sidebar-right' );
 	rightColumn.append( info, settings );
 
-	container.append( hud, nav, rightColumn, footer, help );
+	const groundPanel = createGroundPanel( app, container );
+
+	container.append( hud, nav, rightColumn, groundPanel.root, footer, help );
+
+	// Standing somewhere is a different activity from circling something, so
+	// the interface changes shape rather than just gaining a panel.
+	app.on( 'mode', () => {
+		const ground = app.mode === 'ground';
+		container.classList.toggle( 'is-ground', ground );
+		groundPanel.setVisible( ground );
+		nav.hidden = ground;
+		help.innerHTML = ground ? GROUND_HELP : ORBIT_HELP;
+	} );
 
 	// ---------------------------------------------------------------- events
 	let pointerMoved = false;
@@ -420,7 +470,7 @@ export function mountUI( app, container ) {
 		if ( downAt && Math.hypot( e.clientX - downAt[ 0 ], e.clientY - downAt[ 1 ] ) > 4 ) pointerMoved = true;
 	} );
 	app.canvas.addEventListener( 'pointerup', ( e ) => {
-		if ( pointerMoved ) return;
+		if ( pointerMoved || app.mode === 'ground' ) return;
 		const hit = app.pick( e.clientX, e.clientY );
 		if ( hit ) app.setFocus( hit.id );
 	} );
@@ -438,6 +488,7 @@ export function mountUI( app, container ) {
 			case '.': rateIndex = Math.min( RATES.length - 1, rateIndex + 1 ); applyRate(); break;
 			case 'r': direction *= -1; reverse.classList.toggle( 'is-active', direction < 0 ); applyRate(); break;
 			case 'n': app.clock.now(); break;
+			case 'Escape': if ( app.mode === 'ground' ) app.exitGround(); break;
 			case 'l': toggleControls.labels.input.click(); break;
 			case 'o': toggleControls.orbits.input.click(); break;
 			case 'h': help.classList.toggle( 'is-hidden' ); break;
@@ -485,6 +536,7 @@ export function mountUI( app, container ) {
 		}
 
 		labels.update();
+		groundPanel.update();
 
 		dateLine.textContent = formatDate( app.clock.date );
 		rateLine.textContent = app.clock.paused ? 'paused' : formatRate( app.clock.rate );

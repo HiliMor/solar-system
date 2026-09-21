@@ -600,9 +600,19 @@ export class SolarSystem {
 		for ( const body of this.bodies ) {
 
 			if ( body.isSun ) {
+
 				this.sunUniforms.exposureBias.value = exposure;
 				this.coronaUniforms.exposureBias.value = exposure;
+
+				// The corona works from the impact parameter of the view ray
+				// against the Sun's centre, so it needs that centre in world
+				// space every frame. Leaving it at the origin only looks right
+				// while the Sun happens to be the focus -- from anywhere else
+				// the falloff flattens and the corona becomes a painted disc.
+				this.coronaUniforms.centre.value.copy( body.group.position );
+
 				continue;
+
 			}
 
 			const occluders = body._occluders || ( body._occluders = [] );
@@ -652,9 +662,9 @@ export class SolarSystem {
 
 		for ( const body of this.bodies ) body.applyScale( scale );
 
-		this.corona.scale.setScalar( this.sun.radiusUnits * 3.4 );
+		this.corona.scale.setScalar( this.sun.radiusUnits * 4.6 );
 		this.coronaUniforms.surfaceRadius.value = this.sun.radiusUnits;
-		this.coronaUniforms.outerRadius.value = this.sun.radiusUnits * 3.4;
+		this.coronaUniforms.outerRadius.value = this.sun.radiusUnits * 4.6;
 
 		for ( const body of this.bodies ) {
 

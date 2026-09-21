@@ -1,5 +1,5 @@
 import { WebGPURenderer, RenderPipeline } from 'three/webgpu';
-import { ACESFilmicToneMapping, AgXToneMapping, NeutralToneMapping, SRGBColorSpace } from 'three';
+import { NeutralToneMapping, SRGBColorSpace } from 'three';
 import { pass, min, vec3, float, uniform } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 
@@ -29,7 +29,11 @@ export async function createRenderer( canvas ) {
 
 	renderer.setPixelRatio( Math.min( window.devicePixelRatio, 2 ) );
 	renderer.setSize( window.innerWidth, window.innerHeight );
-	renderer.toneMapping = AgXToneMapping;
+	// Neutral rather than AgX: AgX desaturates as it compresses, which is fine
+	// for film emulation and wrong here -- it turned a clear sky into grey and
+	// bled the colour out of Mars. Neutral compresses highlights and leaves hue
+	// and saturation alone.
+	renderer.toneMapping = NeutralToneMapping;
 	renderer.toneMappingExposure = 1;
 	renderer.outputColorSpace = SRGBColorSpace;
 
@@ -58,8 +62,8 @@ export function createPostProcessing( renderer, scene, camera ) {
 	// that straight into a bloom means one sub-pixel Sun can put a white haze
 	// over the entire frame. Capping the input keeps the flare generous without
 	// letting a single hot pixel take the image with it.
-	const bloomSource = min( colour, vec3( 6 ) );
-	const bloomNode = bloom( bloomSource, 0.55, 0.42, 0.5 );
+	const bloomSource = min( colour, vec3( 3.5 ) );
+	const bloomNode = bloom( bloomSource, 0.45, 0.34, 0.5 );
 
 	const post = new RenderPipeline( renderer );
 	post.outputNode = colour.add( bloomNode );
