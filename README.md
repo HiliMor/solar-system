@@ -1,13 +1,21 @@
 # Solar System
 
-An interactive model of the solar system, rendered with three.js and WebGPU.
+Most solar system viewers show you the solar system, from outside, looking in.
 
-Positions come from real ephemerides rather than art direction. Set the clock to
-2 August 2027 and the Moon's shadow falls on Upper Egypt, because that is where
-it fell. Set it to 1986 and Halley rounds the Sun with its dust and ion tails
-pointing in the two different directions they actually point. The asteroid belt
-is forty-two thousand individual orbits solved on the GPU every frame, gaps and
-all.
+This one also shows you **the sky** — from a latitude and longitude on any solid
+body, at any moment in history or the future — and it **finds** the moments worth
+looking at instead of reading them from a table.
+
+Stand in Luxor at 10:07 UTC on 2 August 2027 and the Sun is 81.8° up and
+completely covered, because that is where and when it will be. Ask for eclipses
+visible from where you are and it sweeps the ephemeris and tells you, with the
+duration of totality and how high the Sun will be. Turn the sound on and Io,
+Europa and Ganymede sound two octaves apart, because their 1:2:4 resonance is a
+chord.
+
+Built with three.js and WebGPU. Positions come from real ephemerides rather than
+art direction; the asteroid belt is forty-two thousand individual orbits solved
+on the GPU every frame, Kirkwood gaps and all.
 
 ```bash
 npm install
@@ -17,6 +25,52 @@ npm run dev
 
 Needs a browser with WebGPU. Chrome 113+, Edge 113+ and Safari 18+ qualify; it
 falls back to WebGL2 elsewhere, with everything intact but slower.
+
+---
+
+## The three things it does that others do not
+
+### Stand somewhere and look up
+
+The camera lands at a latitude and longitude and becomes a planetarium: fixed in
+place, free to look around, zoom changing the field of view rather than the
+position, the way raising binoculars does. Twenty-one places are set up by name,
+or use your own location.
+
+Because everything is computed rather than staged, the interesting things simply
+happen. Totality from Luxor drains the light out of the landscape and brings the
+stars out. Jupiter hangs twenty degrees wide over Europa and never moves,
+because Europa is tidally locked. From the far side of the Moon, Earth never
+rises at all.
+
+Ground mode forces true angular sizes. From a surface the whole question is how
+big things look — whether the Moon covers the Sun, how wide Jupiter is from
+Europa — and a compressed view would make every one of those answers wrong.
+
+### Find events, rather than look them up
+
+Pick a kind of event and a date, and it scans the ephemeris: sample a geometric
+quantity coarsely, find the local minima, refine each by golden-section search,
+keep the ones that clear a threshold. Solar eclipses from your exact location,
+lunar eclipses, transits of Mercury and Venus, oppositions, shadows of the
+Galilean moons crossing Jupiter, Saturn's ring-plane crossings.
+
+An eleven-year eclipse sweep takes about 130 ms, in a worker. Nothing is stored,
+so moving the observer changes the answers. Checked against the published
+record, it finds every Mercury and Venus transit between 2000 and 2130 with no
+misses and no spurious ones, and its opposition and ring-plane dates land on the
+published ones.
+
+Click a result and it takes you there — sets the clock, puts you on the ground,
+and points you at the right part of the sky.
+
+### Play the orbits
+
+Each body sounds a note as it passes periapsis, pitched by 1/period and folded
+into an audible range. The intervals you hear are the period ratios. Reference
+pitches are per system, so satellites are heard on their own terms: against
+Io at A, Europa lands six cents from the octave below and Ganymede nineteen
+cents from two octaves below. The resonance is a chord.
 
 ---
 
@@ -36,6 +90,9 @@ falls back to WebGL2 elsewhere, with everything intact but slower.
 | `l` / `o` | labels / orbit paths |
 | `h` | hide the shortcut list |
 
+Standing on a surface, drag turns your head, scroll works like binoculars, and
+`esc` returns you to orbit.
+
 Time runs from real-time up to a thousand years a second, forwards or backwards,
 and you can jump to any date.
 
@@ -45,6 +102,7 @@ and you can jump to any date.
 
 **43 bodies** — the Sun, eight planets, five dwarf planets, twenty-five major
 moons and four comets, each with real physical data and its own rotation model.
+Thirty-one of them are solid enough to stand on.
 
 **~77,000 small bodies** — the main asteroid belt with its Kirkwood gaps, the
 Hilda group, Jupiter's Trojan clouds at L4 and L5, and the Kuiper belt. Each
@@ -98,6 +156,8 @@ reproducible from the modules in `src/physics/`.
 | Eclipses | Every total solar eclipse tested from 1919 to 2045 puts the Moon's shadow axis on Earth, with the offsets in the right proportions. |
 | Satellites | The Galilean elements recover Jupiter's mass to 0.1% through Kepler's third law; the Laplace resonance holds to 0.4%. |
 | Comets | Anchored at known perihelion passages; perihelion distances match to four figures. |
+| Event search | Every Mercury and Venus transit from 2000 to 2130 found, none missed, none spurious. Oppositions and Saturn ring-plane crossings land on the published dates. Eclipse timings are good to about a minute, not to the second. |
+| Observer geometry | On the reference ellipsoid, not a sphere. Geodetic and geocentric latitude differ by 11 arcminutes on Earth and nearly six degrees on Saturn, and an eclipse turns on the arcminute. |
 
 ### Where it stops being data
 
@@ -117,6 +177,11 @@ The interface says so on each body, but in short:
   flybys.
 - **Surfaces without a published map** — most of the moons — are procedural,
   tuned to the terrain type spacecraft found there. An impression, not imagery.
+- **The ground you stand on** is procedural too, and flat apart from the
+  curvature of the body. There is no terrain data: Olympus Mons puts you at the
+  right altitude with the right horizon, not on a modelled volcano.
+- **Eclipse times** are as good as the model, which is roughly a minute — fine
+  for finding one, not a substitute for a proper canon if you are travelling.
 
 ---
 
@@ -143,11 +208,14 @@ would otherwise swallow them.
 
 ```
 src/
-  data/        physical and orbital data, with sources cited inline
-  physics/     Kepler solver, ephemerides, lunar theory, time, frames
-  core/        renderer, camera, scale policy, floating origin, app loop
-  scene/       bodies, orbits, belts, comet tails, spacecraft, starfield
+  data/        physical and orbital data, and places to stand
+  physics/     Kepler solver, ephemerides, lunar theory, observer geometry,
+               event search, time, frames
+  core/        renderer, cameras, scale policy, floating origin, app loop
+  scene/       bodies, orbits, belts, comet tails, spacecraft, ground, starfield
   shaders/     TSL materials: surfaces, atmospheres, rings, the Sun
+  audio/       orbital sonification
+  workers/     event search, off the main thread
   ui/          panels, labels, controls
 ```
 
@@ -162,6 +230,9 @@ is lit correctly no matter how the geometry is squashed.
 crater on Europa is a fraction of one, and float32 — all the GPU has — cannot
 hold both. So the focused body's position is subtracted before anything reaches
 a transform. The camera stays near the origin and the universe moves around it.
+Standing on a surface the origin moves onto the observer, because a body's
+centre is not close enough: at 6.4 units out, float32 resolves 0.8 m, which is
+coarser than the distance from someone's eyes to their feet.
 
 **No three.js lights.** The Sun is 150 million km away and the render scale is
 deliberately non-physical, so an inverse-square PointLight would be wrong by

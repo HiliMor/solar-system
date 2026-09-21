@@ -5,6 +5,7 @@ import { AU_KM, DEG, SUN_RADIUS_KM } from '../data/constants.js';
 import { formatDate, formatRate } from '../physics/time.js';
 import { Labels } from './Labels.js';
 import { createGroundPanel } from './GroundPanel.js';
+import { createEventPanel } from './EventPanel.js';
 import { STANDABLE, locationsFor } from '../data/locations.js';
 
 /**
@@ -406,6 +407,40 @@ export function mountUI( app, container ) {
 		return control.root;
 	} );
 
+	// --- sound --------------------------------------------------------------
+	const audioNote = el( 'p', 'panel-note',
+		'Each body sounds a note at periapsis, pitched by its period. The intervals '
+		+ 'are the period ratios, so Io, Europa and Ganymede come out two octaves apart.' );
+
+	const audioToggle = toggle( 'Orbital sonification', false, async ( value ) => {
+		if ( value ) {
+			const ok = await app.audio.enable();
+			if ( ! ok ) { audioToggle.set( false ); audioNote.textContent = 'Web Audio is unavailable in this browser.'; }
+		} else {
+			app.audio.disable();
+		}
+		volumeSlider.root.classList.toggle( 'is-muted', ! value );
+		resonance.disabled = ! value;
+	} );
+
+	const volumeSlider = slider( 'Volume', {
+		min: 0, max: 1, step: 0.01, value: 0.5,
+		format: ( v ) => `${ Math.round( v * 100 ) }%`,
+		onInput: ( v ) => app.audio.setVolume( v )
+	} );
+	volumeSlider.root.classList.add( 'is-muted' );
+
+	const resonance = el( 'button', 'btn', 'Play the Laplace resonance' );
+	resonance.type = 'button';
+	resonance.disabled = true;
+	resonance.addEventListener( 'click', () => {
+		const played = app.audio.playLaplaceResonance( app.system );
+		if ( played ) {
+			resonance.textContent = 'Io · Europa · Ganymede — 1:2:4';
+			setTimeout( () => { resonance.textContent = 'Play the Laplace resonance'; }, ( played.duration + 2 ) * 1000 );
+		}
+	} );
+
 	const autoExposure = toggle( 'Auto exposure', true, ( value ) => {
 		app.settings.autoExposure = value;
 		exposureSlider.root.classList.toggle( 'is-muted', value );
@@ -417,7 +452,8 @@ export function mountUI( app, container ) {
 	settingsBody.append(
 		group( 'Scale', scaleSlider.root, scaleNote, sizeSlider.root, sunSlider.root ),
 		group( 'Show', ...toggleRows, minorLabels.root ),
-		group( 'Image', autoExposure.root, exposureSlider.root, starSlider.root )
+		group( 'Image', autoExposure.root, exposureSlider.root, starSlider.root ),
+		group( 'Sound', audioToggle.root, audioNote, volumeSlider.root, resonance )
 	);
 
 	const settingsToggle = el( 'button', 'settings-toggle' );
@@ -448,8 +484,9 @@ export function mountUI( app, container ) {
 	rightColumn.append( info, settings );
 
 	const groundPanel = createGroundPanel( app, container );
+	const eventPanel = createEventPanel( app, container );
 
-	container.append( hud, nav, rightColumn, groundPanel.root, footer, help );
+	container.append( hud, nav, rightColumn, groundPanel.root, eventPanel.root, footer, help );
 
 	// Standing somewhere is a different activity from circling something, so
 	// the interface changes shape rather than just gaining a panel.

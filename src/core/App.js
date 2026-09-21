@@ -7,6 +7,7 @@ import { GroundCamera } from './GroundCamera.js';
 import { observerWorld } from '../physics/observer.js';
 import { createGround } from '../scene/Ground.js';
 import { STANDABLE } from '../data/locations.js';
+import { OrbitAudio } from '../audio/OrbitAudio.js';
 import { Scale } from './Scale.js';
 import { Frame } from './Frame.js';
 import { loadTextures } from './textures.js';
@@ -84,6 +85,8 @@ export class App {
 			manualExposure: 1,
 			starfieldIntensity: 1
 		};
+
+		this.audio = new OrbitAudio();
 
 		this._scaleDirty = true;
 		this._listeners = new Map();
@@ -312,6 +315,15 @@ export class App {
 
 	}
 
+	/** Points the ground camera at a body, by id. */
+	lookAtFromGround( bodyId ) {
+		if ( this.mode !== 'ground' ) return;
+		const body = this.system.byId.get( bodyId );
+		if ( ! body || ! this.observer?.frame ) return;
+		_v.copy( body.group.position ).sub( this.observer.frame.position ).normalize();
+		this.groundCamera.lookAt( _v, 1.4 );
+	}
+
 	/** Recomputes the observer's world frame from the body's current rotation. */
 	_updateObserver() {
 
@@ -494,6 +506,8 @@ export class App {
 
 		// 7. atmosphere culling flip when the camera enters a shell
 		this._updateAtmosphereSides();
+
+		this.audio.update( this.system, this.focusId );
 
 		this.emit( 'frame', { dt, days } );
 
