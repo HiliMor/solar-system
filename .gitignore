@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+
+# Texture maps are fetched by `npm run textures` (see README).
+# They are third-party imagery (CC BY 4.0) and ~60 MB, so they are not committed.
+public/textures/*
+!public/textures/.gitkeep
+.captures/

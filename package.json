@@ -1,0 +1,22 @@
+{
+  "name": "solar-system",
+  "version": "1.0.0",
+  "description": "An interactive, physically grounded solar system rendered with three.js and WebGPU.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "textures": "node scripts/fetch-textures.mjs",
+    "setup": "npm install && node scripts/fetch-textures.mjs"
+  },
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "utif": "^3.1.0",
+    "vite": "^8.3.0"
+  }
+}
