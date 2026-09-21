@@ -173,7 +173,7 @@ export class App {
 	 * @param {number} longitude east, degrees
 	 * @param {number} altitude  metres above the reference ellipsoid
 	 */
-	enterGround( bodyId, latitude, longitude, altitude = 0, label = null ) {
+	enterGround( bodyId, latitude, longitude, altitude = 0, label = null, prominence = 0 ) {
 
 		const body = this.system.byId.get( bodyId );
 		if ( ! body || ! STANDABLE.has( bodyId ) ) return false;
@@ -198,6 +198,10 @@ export class App {
 		this.observer = {
 			bodyId, latitude, longitude, label,
 			altitude, eyeAltitude: altitude + EYE_HEIGHT_M,
+			// How far above the surrounding ground, which is what the horizon
+			// answers to. Standing on a plain that is eye height; on a genuine
+			// peak it is the prominence, and the horizon opens right up.
+			eyeHeight: EYE_HEIGHT_M + ( prominence || 0 ),
 			frame: null
 		};
 
@@ -333,7 +337,7 @@ export class App {
 		const body = this.system.byId.get( o.bodyId );
 		if ( ! body ) return;
 
-		o.frame = observerWorld( body, o.latitude, o.longitude, o.eyeAltitude, o.frame || {} );
+		o.frame = observerWorld( body, o.latitude, o.longitude, o.eyeAltitude, o.frame || {}, o.eyeHeight );
 		o.body = body;
 
 	}
@@ -691,8 +695,27 @@ export class App {
 		// adaptation is deliberately slow the landscape goes dark first and only
 		// then comes back -- which is what it is like.
 		if ( this.mode === 'ground' ) {
+
 			this.localVisibility = this.solarVisibilityHere();
-			irradiance *= Math.max( this.localVisibility, 2e-5 );
+
+			// Also account for how high the Sun is. Irradiance on the ground
+			// falls with its elevation and vanishes at sunset, so metering on
+			// the body's distance alone leaves dusk exposed for noon and the
+			// landscape goes black the moment the Sun touches the horizon.
+			const frame = this.observer?.frame;
+			let elevation = 1;
+			if ( frame ) {
+				_sunDir.copy( this.system.sunWorld ).sub( frame.position ).normalize();
+				elevation = _sunDir.dot( frame.up );
+			}
+
+			// The floor is twilight: on a body with an atmosphere the sky keeps
+			// glowing well after sunset, and on an airless one starlight does not.
+			const twilight = this.observer?.body?.def.atmosphere ? 0.012 : 0.0015;
+			const daylight = Math.max( elevation + 0.06, 0 ) * this.localVisibility;
+
+			irradiance *= Math.max( daylight, twilight );
+
 		}
 
 		// Square root rather than a straight inverse: a partial compensation

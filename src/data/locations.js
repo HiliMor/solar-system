@@ -7,6 +7,8 @@
  * overhead because the moon beneath you is tidally locked.
  *
  * Altitudes are metres above the reference ellipsoid; longitudes are east.
+ * `prominence` is height above the surrounding terrain, which is what sets the
+ * horizon -- it is only given for places that really are that far above it.
  */
 export const LOCATIONS = [
 
@@ -39,14 +41,14 @@ export const LOCATIONS = [
 		note: 'Perseverance. A river delta, dry for three billion years.' },
 	{ body: 'mars', name: 'Gale Crater', lat: -4.589, lon: 137.442, alt: -4500,
 		note: 'Curiosity’s landing site, at the foot of a five-kilometre mountain.' },
-	{ body: 'mars', name: 'Olympus Mons summit', lat: 18.65, lon: -133.8, alt: 21229,
+	{ body: 'mars', name: 'Olympus Mons summit', lat: 18.65, lon: -133.8, alt: 21229, prominence: 21000,
 		note: 'Twenty-two kilometres up. The horizon falls six degrees below level.' },
 	{ body: 'mars', name: 'Valles Marineris', lat: -13.9, lon: -59.2, alt: -3000,
 		note: 'A canyon four thousand kilometres long and seven deep.' },
 
 	// --- The outer system ---------------------------------------------------
 	{ body: 'europa', name: 'Europa, sub-Jovian point', lat: 0, lon: 0, alt: 0,
-		note: 'Jupiter sits permanently overhead, twenty degrees wide — forty times the Moon from Earth.' },
+		note: 'Jupiter sits permanently overhead, twelve degrees wide — twenty-four times the width of the Moon from Earth.' },
 	{ body: 'io', name: 'Io, sub-Jovian point', lat: 0, lon: 0, alt: 0,
 		note: 'Jupiter fills nineteen degrees of sky and never moves. The ground flexes a hundred metres a day.' },
 	{ body: 'titan', name: 'Huygens landing site', lat: -10.3, lon: 167.6, alt: 0,

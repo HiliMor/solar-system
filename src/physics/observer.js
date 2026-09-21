@@ -32,8 +32,15 @@ const _q = new Quaternion();
  * @param {number} latDeg     planetographic latitude, degrees north
  * @param {number} lonDeg     east longitude, degrees
  * @param {number} altitudeM  height above the reference ellipsoid, metres
+ * @param {number} eyeHeightM  height above the *local terrain*, which is what
+ *   sets the horizon. These are different numbers and conflating them breaks:
+ *   Jezero Crater sits 2,600 m below the Mars datum, so a horizon computed from
+ *   the datum height takes the square root of a negative number, and Olympus
+ *   Mons sits 22 km above it, which would put the horizon 380 km away for
+ *   somebody standing in the middle of its summit caldera. The horizon depends
+ *   on how far you are above the ground around you, not above a datum.
  */
-export function observerBodyFixed( body, latDeg, lonDeg, altitudeM = 1.7 ) {
+export function observerBodyFixed( body, latDeg, lonDeg, altitudeM = 0, eyeHeightM = 1.7 ) {
 
 	const a = body.def.radius;                       // equatorial radius, km
 	const f = body.def.flattening || 0;
@@ -45,7 +52,8 @@ export function observerBodyFixed( body, latDeg, lonDeg, altitudeM = 1.7 ) {
 	const sinLat = Math.sin( lat ), cosLat = Math.cos( lat );
 	const sinLon = Math.sin( lon ), cosLon = Math.cos( lon );
 
-	const h = altitudeM / 1000;                      // km
+	const h = altitudeM / 1000;                      // km above the ellipsoid
+	const eye = Math.max( eyeHeightM, 0.1 ) / 1000;  // km above local ground
 
 	// Radius of curvature in the prime vertical.
 	const N = a / Math.sqrt( 1 - eSquared * sinLat * sinLat );
@@ -63,8 +71,8 @@ export function observerBodyFixed( body, latDeg, lonDeg, altitudeM = 1.7 ) {
 		/** Toward increasing longitude. */
 		east: { x: - sinLon, y: 0, z: - cosLon },
 		/** Geometric horizon distance and dip, for sizing the ground. */
-		horizonKm: Math.sqrt( Math.max( 2 * a * h + h * h, 1e-9 ) ),
-		horizonDip: Math.acos( a / ( a + Math.max( h, 1e-9 ) ) )
+		horizonKm: Math.sqrt( 2 * a * eye + eye * eye ),
+		horizonDip: Math.acos( a / ( a + eye ) )
 	};
 
 }
@@ -75,9 +83,9 @@ export function observerBodyFixed( body, latDeg, lonDeg, altitudeM = 1.7 ) {
  *
  * @returns {{ position: Vector3, up: Vector3, north: Vector3, east: Vector3 }}
  */
-export function observerWorld( body, latDeg, lonDeg, altitudeM, out = {} ) {
+export function observerWorld( body, latDeg, lonDeg, altitudeM, out = {}, eyeHeightM = 1.7 ) {
 
-	const local = observerBodyFixed( body, latDeg, lonDeg, altitudeM );
+	const local = observerBodyFixed( body, latDeg, lonDeg, altitudeM, eyeHeightM );
 
 	// The pivot carries orientation *and* the render scale; only the rotation is
 	// wanted here, because the position is converted from real kilometres.

@@ -27,7 +27,9 @@ import { KM_PER_UNIT } from '../data/constants.js';
  * origin. Rings are spaced quadratically so detail concentrates near the feet,
  * where it is actually visible.
  */
-function makeCapGeometry( bodyRadiusKm, horizonKm, rings = 96, sectors = 160 ) {
+// The horizon is a hard line against the sky, so it shows every facet: at 160
+// sectors each is more than two degrees wide and the edge visibly steps.
+function makeCapGeometry( bodyRadiusKm, horizonKm, rings = 110, sectors = 320 ) {
 
 	const R = bodyRadiusKm / KM_PER_UNIT;
 	const maxAngle = Math.min( Math.asin( Math.min( horizonKm / bodyRadiusKm, 1 ) ) * 1.02, Math.PI * 0.49 );

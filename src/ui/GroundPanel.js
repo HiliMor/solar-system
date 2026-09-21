@@ -74,7 +74,7 @@ export function createGroundPanel( app, container ) {
 	select.addEventListener( 'change', () => {
 		if ( select.value === '' ) return;
 		const location = LOCATIONS[ Number( select.value ) ];
-		app.enterGround( location.body, location.lat, location.lon, location.alt, location.name );
+		app.enterGround( location.body, location.lat, location.lon, location.alt, location.name, location.prominence );
 		select.value = '';
 	} );
 

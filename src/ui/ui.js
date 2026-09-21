@@ -196,7 +196,7 @@ export function mountUI( app, container ) {
 				: `Stand on ${ target.name }`;
 			standButton.onclick = () => {
 				const place = places[ 0 ];
-				if ( place ) app.enterGround( place.body, place.lat, place.lon, place.alt, place.name );
+				if ( place ) app.enterGround( place.body, place.lat, place.lon, place.alt, place.name, place.prominence );
 				else app.enterGround( target.id, 0, 0, 0, null );
 			};
 		}
