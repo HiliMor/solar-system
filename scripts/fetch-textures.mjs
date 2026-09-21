@@ -154,7 +154,8 @@ async function main() {
 
 	if ( failures.length ) {
 		console.log( `\n${ failures.length } map(s) could not be fetched. The app still runs -- it falls back to` );
-		console.log( 'procedural surfaces for anything missing. Re-run `npm run textures` to retry.' );
+		console.log( 'procedural or flat-colour fallbacks for anything missing, and says so on startup.' );
+		console.log( 'Re-run `npm run textures` to retry.' );
 		process.exitCode = 0;
 	}
 

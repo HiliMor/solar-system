@@ -42,6 +42,19 @@ async function boot() {
 	app.applyVisibility();
 	app.start();
 
+	// A fresh clone has no surface maps -- they are not committed. The scene
+	// still runs, on procedural and flat-colour fallbacks, but it is worth
+	// saying so rather than leaving someone to wonder why Earth is a blue ball.
+	if ( app.missingTextures.length ) {
+		const notice = document.createElement( 'div' );
+		notice.className = 'notice';
+		notice.innerHTML = `<strong>${ app.missingTextures.length } surface map${ app.missingTextures.length > 1 ? 's' : '' } missing.</strong>`
+			+ ' Run <code>npm run textures</code> to download them.'
+			+ '<button type="button" aria-label="Dismiss">\u00d7</button>';
+		notice.querySelector( 'button' ).addEventListener( 'click', () => notice.remove() );
+		document.getElementById( 'ui' ).appendChild( notice );
+	}
+
 	status.textContent = app.usingWebGPU ? 'WebGPU ready' : 'Running on WebGL2';
 	requestAnimationFrame( () => loading.classList.add( 'done' ) );
 
