@@ -6,6 +6,7 @@ import { formatDate, formatRate } from '../physics/time.js';
 import { Labels } from './Labels.js';
 import { createGroundPanel } from './GroundPanel.js';
 import { createEventPanel } from './EventPanel.js';
+import { installResponsiveLayout } from './MobileLayout.js';
 import { STANDABLE, locationsFor } from '../data/locations.js';
 
 /**
@@ -512,10 +513,18 @@ export function mountUI( app, container ) {
 	app.on( 'mode', () => {
 		const ground = app.mode === 'ground';
 		container.classList.toggle( 'is-ground', ground );
-		groundPanel.setVisible( ground );
-		nav.hidden = ground;
+		// In the phone sheet the ground panel is a tab, shown by the tab bar.
+		groundPanel.setVisible( ground || container.classList.contains( 'is-phone' ) );
+		nav.hidden = ground && ! container.classList.contains( 'is-phone' );
 		help.innerHTML = ground ? GROUND_HELP : ORBIT_HELP;
 	} );
+
+	// On a phone the same panels move into a single bottom sheet; on a desktop
+	// they stay where they are.
+	const responsive = installResponsiveLayout( app, container, {
+		info, bodies: nav, ground: groundPanel.root, events: eventPanel.root, settings
+	} );
+	if ( responsive.installed ) groundPanel.setVisible( true );
 
 	// ---------------------------------------------------------------- events
 	let pointerMoved = false;

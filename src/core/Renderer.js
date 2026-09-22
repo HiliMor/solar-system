@@ -17,7 +17,7 @@ import { bloom } from 'three/addons/tsl/display/BloomNode.js';
  *     are tagged as emissive, so the bloom picks out real light sources instead
  *     of smearing every bright surface. Saturn's cloud tops stay crisp.
  */
-export async function createRenderer( canvas ) {
+export async function createRenderer( canvas, profile = { pixelRatioCap: 2 } ) {
 
 	const renderer = new WebGPURenderer( {
 		canvas,
@@ -27,7 +27,7 @@ export async function createRenderer( canvas ) {
 		alpha: false
 	} );
 
-	renderer.setPixelRatio( Math.min( window.devicePixelRatio, 2 ) );
+	renderer.setPixelRatio( Math.min( window.devicePixelRatio, profile.pixelRatioCap ) );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	// Neutral rather than AgX: AgX desaturates as it compresses, which is fine
 	// for film emulation and wrong here -- it turned a clear sky into grey and

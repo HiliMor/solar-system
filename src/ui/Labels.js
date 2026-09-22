@@ -3,6 +3,26 @@ import { Vector3 } from 'three';
 const _v = new Vector3();
 
 /**
+ * How close two label anchors have to be before the lower-priority one is
+ * dropped. Wider than it is tall, because the text runs to the right.
+ */
+const LABEL_CLEARANCE_X = 74;
+const LABEL_CLEARANCE_Y = 15;
+
+/** Lower sorts first, and first gets the space. */
+function priority( body, app ) {
+	if ( body.id === app.focusId ) return 0;
+	switch ( body.kind || body.type ) {
+		case 'star': return 1;
+		case 'planet': return 2;
+		case 'dwarf': return 3;
+		case 'moon': return 4;
+		case 'comet': return 5;
+		default: return 6;
+	}
+}
+
+/**
  * Screen-space labels and target markers.
  *
  * Kept in the DOM rather than in the scene. Text rendered as geometry has to
@@ -53,6 +73,11 @@ export class Labels {
 			this.app.setFocus( id );
 		} );
 
+		// Hidden until it is positioned. _hide() only acts on a label that was
+		// previously shown, so without this every label that never comes into
+		// view stays stacked in the top-left corner at translate(0, 0).
+		el.style.display = 'none';
+
 		this.root.appendChild( el );
 		this.entries.set( id, { el, dot, text, kind, visible: false } );
 
@@ -76,7 +101,17 @@ export class Labels {
 
 		const candidates = [ ...app.system.bodies, ...app.system.spacecraft ];
 
-		for ( const body of candidates ) {
+		// Placed label anchors this frame, for collision testing.
+		const placed = this._placed || ( this._placed = [] );
+		placed.length = 0;
+
+		// Order matters: whichever label is considered first wins the space, so
+		// the Sun beats a planet beats a moon. Without this, an eclipse -- two
+		// bodies at the same point by definition -- renders "Sun" and "Moon"
+		// on top of each other as unreadable mush.
+		const ordered = candidates.slice().sort( ( a, b ) => priority( a, app ) - priority( b, app ) );
+
+		for ( const body of ordered ) {
 
 			const entry = this.entries.get( body.id );
 			if ( ! entry ) continue;
@@ -112,6 +147,18 @@ export class Labels {
 
 			const x = halfW + _v.x * halfW;
 			const y = halfH - _v.y * halfH;
+
+			// Suppress a label that would sit on top of a more important one.
+			let collides = false;
+			for ( let i = 0; i < placed.length; i ++ ) {
+				const other = placed[ i ];
+				if ( Math.abs( other.x - x ) < LABEL_CLEARANCE_X && Math.abs( other.y - y ) < LABEL_CLEARANCE_Y ) {
+					collides = true;
+					break;
+				}
+			}
+			if ( collides ) { this._hide( entry ); continue; }
+			placed.push( { x, y } );
 
 			// Reticle: large when the body is a speck, gone when it is not.
 			const reticle = Math.max( 4, Math.min( 13, 13 - apparent * 0.5 ) );

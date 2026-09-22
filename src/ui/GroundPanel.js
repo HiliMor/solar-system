@@ -193,7 +193,8 @@ export function createGroundPanel( app, container ) {
 	}
 
 	function setVisible( visible ) {
-		root.style.display = visible ? '' : 'none';
+		// In the phone sheet, visibility is the tab bar's business.
+		root.style.display = visible || root.classList.contains( 'in-sheet' ) ? '' : 'none';
 	}
 
 	setVisible( false );

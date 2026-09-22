@@ -34,11 +34,20 @@ export class GroundCamera {
 
 		this._dragging = false;
 		this._last = { x: 0, y: 0 };
+		/** Active touches, so two fingers can pinch. */
+		this._touches = new Map();
+		this._pinchDistance = 0;
 		this._velocity = { azimuth: 0, altitude: 0 };
 		this._fovTarget = this.fov;
 
 		this._onPointerDown = ( e ) => {
 			if ( ! this.enabled || e.button !== 0 ) return;
+			this._touches.set( e.pointerId, { x: e.clientX, y: e.clientY } );
+			if ( this._touches.size === 2 ) {
+				this._pinchDistance = this._spread();
+				this._dragging = false;
+				return;
+			}
 			this._dragging = true;
 			this._last.x = e.clientX;
 			this._last.y = e.clientY;
@@ -46,7 +55,27 @@ export class GroundCamera {
 		};
 
 		this._onPointerMove = ( e ) => {
-			if ( ! this._dragging || ! this.enabled ) return;
+
+			if ( ! this.enabled ) return;
+
+			if ( this._touches.has( e.pointerId ) ) {
+				this._touches.set( e.pointerId, { x: e.clientX, y: e.clientY } );
+			}
+
+			// Two fingers: pinch to zoom. There is no wheel on a phone, and
+			// without this the field of view is stuck at whatever it was.
+			if ( this._touches.size === 2 ) {
+				const spread = this._spread();
+				if ( this._pinchDistance > 0 && spread > 0 ) {
+					this._fovTarget = MathUtils.clamp(
+						this._fovTarget * ( this._pinchDistance / spread ), this.minFov, this.maxFov
+					);
+				}
+				this._pinchDistance = spread;
+				return;
+			}
+
+			if ( ! this._dragging ) return;
 			// Scale by the field of view so the control stays proportional when
 			// zoomed in; at 0.5 degrees a pixel of drag must be a small step.
 			const perPixel = this.fov / window.innerHeight;
@@ -58,6 +87,8 @@ export class GroundCamera {
 		};
 
 		this._onPointerUp = ( e ) => {
+			this._touches.delete( e.pointerId );
+			if ( this._touches.size < 2 ) this._pinchDistance = 0;
 			this._dragging = false;
 			domElement.releasePointerCapture?.( e.pointerId );
 		};
@@ -76,6 +107,13 @@ export class GroundCamera {
 		domElement.addEventListener( 'pointercancel', this._onPointerUp );
 		domElement.addEventListener( 'wheel', this._onWheel, { passive: false } );
 
+	}
+
+	/** Distance between the two active touches. */
+	_spread() {
+		const points = [ ...this._touches.values() ];
+		if ( points.length < 2 ) return 0;
+		return Math.hypot( points[ 0 ].x - points[ 1 ].x, points[ 0 ].y - points[ 1 ].y );
 	}
 
 	_clamp() {

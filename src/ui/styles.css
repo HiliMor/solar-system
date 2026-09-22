@@ -577,14 +577,9 @@ input[type='range']::-moz-range-thumb {
 	.credit { display: none; }
 }
 
-@media (max-width: 640px) {
-	.notice { top: auto; bottom: calc(34vh + 96px); }
-	.bodies { top: auto; bottom: 14px; left: 14px; right: 14px; width: auto; max-height: 34vh; }
-	.sidebar-right { top: 86px; right: 14px; left: 14px; bottom: calc(34vh + 76px); width: auto; }
-	.hud { top: auto; bottom: calc(34vh + 26px); }
-	.clock { min-width: 0; }
-	.footer { display: none; }
-}
+/* Below 760px the bottom sheet takes over entirely -- see the phone rules at
+   the end of this file. The old stacked-panel layout has been removed: it put
+   the clock on top of the settings bar and left a seventy-pixel sliver of sky. */
 
 /* ---------- missing-asset notice ---------- */
 
@@ -928,3 +923,131 @@ input[type='range']::-moz-range-thumb {
 .credits-block p { margin: 0 0 9px; }
 .credits-block p:last-child { margin-bottom: 0; }
 .credits-block strong { color: var(--text-dim); font-weight: 500; }
+
+/* ---------- phone: one bottom sheet, tabbed ---------- */
+
+.sheet {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	flex-direction: column;
+	background: var(--panel);
+	backdrop-filter: blur(22px) saturate(140%);
+	-webkit-backdrop-filter: blur(22px) saturate(140%);
+	border-top: 1px solid var(--border-strong);
+	border-radius: 16px 16px 0 0;
+	padding-bottom: env(safe-area-inset-bottom, 0);
+	transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+	max-height: 68vh;
+	z-index: 20;
+}
+
+.sheet-grip {
+	flex: none;
+	height: 20px;
+	display: grid;
+	place-items: center;
+	cursor: pointer;
+}
+.sheet-grip::before {
+	content: '';
+	width: 38px;
+	height: 4px;
+	border-radius: 2px;
+	background: rgba(255, 255, 255, 0.24);
+}
+
+.sheet-tabs {
+	flex: none;
+	display: flex;
+	gap: 2px;
+	padding: 0 8px 6px;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+.sheet-tabs::-webkit-scrollbar { display: none; }
+
+.sheet-tab {
+	flex: 1 0 auto;
+	min-height: 40px;
+	padding: 0 14px;
+	background: none;
+	border: 0;
+	border-radius: 9px;
+	color: var(--text-faint);
+	font-size: 12.5px;
+	cursor: pointer;
+	white-space: nowrap;
+}
+.sheet-tab[hidden] { display: none; }
+.sheet-tab.is-active { background: var(--accent-dim); color: #fff; }
+
+.sheet-body {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	padding: 0 4px;
+}
+
+/* Collapsed: only the grip and tabs show, so the sky keeps the screen. */
+.sheet:not(.is-open) .sheet-body { display: none; }
+
+/* Panels inside the sheet drop their own chrome and positioning. */
+.sheet-body > .in-sheet {
+	position: static;
+	display: none;
+	width: auto;
+	max-width: none;
+	max-height: none;
+	inset: auto;
+	margin: 0;
+	background: none;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+	border: 0;
+	border-radius: 0;
+	transform: none;
+	overflow: visible;
+}
+.sheet-body > .in-sheet.is-sheet-active { display: block; }
+
+/* Their internal collapse toggles are redundant once they are tabs. */
+.in-sheet > .settings-toggle,
+.in-sheet > .events-toggle { display: none; }
+.in-sheet > .settings-body,
+.in-sheet > .events-body { max-height: none; overflow: visible; padding: 0 10px 14px; border-top: 0; }
+
+.in-sheet .body-list { max-height: none; }
+.in-sheet.bodies { display: none; }
+.in-sheet.bodies.is-sheet-active { display: flex; }
+.in-sheet.bodies[hidden] { display: none; }
+
+.in-sheet.info, .in-sheet.ground-panel { padding: 4px 14px 16px; }
+
+/* Bigger targets throughout the sheet. */
+.is-phone .sheet .btn,
+.is-phone .sheet .ground-select,
+.is-phone .sheet .events-select,
+.is-phone .sheet .search { min-height: 42px; font-size: 13px; }
+.is-phone .sheet .body-item { padding: 9px 12px; font-size: 13px; }
+.is-phone .sheet .sky-row { padding: 8px 6px; font-size: 12.5px; }
+.is-phone .sheet .event-row { padding: 10px 8px; }
+.is-phone .sheet .toggle { padding: 8px 0; }
+.is-phone .sheet .toggle-track { width: 34px; height: 19px; }
+.is-phone .sheet .toggle-track::after { width: 13px; height: 13px; }
+.is-phone .sheet .toggle input:checked + .toggle-track::after { transform: translateX(15px); }
+.is-phone .sheet input[type='range'] { height: 22px; background-clip: content-box; padding: 9px 0; }
+
+/* The clock stays at the top, compact, and the rest gets out of the way. */
+.is-phone .hud { top: max(10px, env(safe-area-inset-top, 0px)); }
+.is-phone .clock { min-width: 0; padding: 8px 12px 9px; }
+.is-phone .clock-date { font-size: 12.5px; }
+.is-phone .transport { gap: 4px; flex-wrap: nowrap; margin-top: 7px; }
+.is-phone .transport .btn { min-height: 34px; min-width: 32px; padding: 4px 6px; }
+.is-phone .transport .date-input { width: 106px; font-size: 10px; padding: 3px 4px; }
+.is-phone .clock-rate { font-size: 9.5px; }
+.is-phone .help, .is-phone .footer { display: none; }
+.is-phone .labels .label-text { font-size: 10px; }

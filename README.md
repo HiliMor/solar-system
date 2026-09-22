@@ -32,6 +32,11 @@ The deployed build uses the 2k maps (~13 MB) so the page loads in seconds;
 Needs a browser with WebGPU. Chrome 113+, Edge 113+ and Safari 18+ qualify; it
 falls back to WebGL2 elsewhere, with everything intact but slower.
 
+**On a phone** the same panels move into a single tabbed bottom sheet, collapsed
+by default so the sky gets the screen, and the scene drops to a lighter profile:
+14,000 belt bodies instead of 77,000, shorter atmosphere ray-marches, and a
+pixel ratio capped at 1.5. Add `?quality=phone`, `modest` or `full` to force one.
+
 ---
 
 ## The three things it does that others do not

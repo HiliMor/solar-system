@@ -167,7 +167,7 @@ export class SolarSystem {
 			body.orbitAU = def.a;
 			this._makeOrbit( body, 0x7fd4ff, 0.3 );
 
-			const tail = createCometTail( def );
+			const tail = createCometTail( def, this.options.profile?.cometParticles );
 			this.root.add( tail.object );
 			body.tail = tail;
 		}
@@ -195,7 +195,9 @@ export class SolarSystem {
 	}
 
 	_buildBelts() {
-		this.belts = BELT_CONFIGS.map( ( config ) => {
+		const scale = this.options.profile?.beltScale ?? 1;
+		this.belts = BELT_CONFIGS.map( ( base ) => {
+			const config = scale === 1 ? base : { ...base, count: Math.max( 400, Math.round( base.count * scale ) ) };
 			const belt = createBelt( config );
 			this.root.add( belt.object );
 			return belt;

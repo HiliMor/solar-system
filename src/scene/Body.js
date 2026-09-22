@@ -105,7 +105,7 @@ export class Body {
 		}
 
 		if ( def.atmosphere ) {
-			const atmo = createAtmosphereMaterial( def, options );
+			const atmo = createAtmosphereMaterial( def, { quality: options.profile?.atmosphereQuality } );
 			this.atmosphere = {
 				mesh: new Mesh( sphereDetailFor( def.radius ), atmo.material ),
 				uniforms: atmo.uniforms,

@@ -11,7 +11,9 @@ async function boot() {
 		status.textContent = 'WebGPU unavailable - falling back to WebGL2.';
 	}
 
-	const app = new App( canvas );
+	// ?quality=phone|modest|full forces a profile, for checking the others.
+	const forced = new URLSearchParams( location.search ).get( 'quality' );
+	const app = new App( canvas, { quality: forced } );
 	window.app = app;
 	// Dev-only conveniences: a handle on three, and a frame capture that works
 	// around WebGPU canvases not surviving toDataURL or tab capture.

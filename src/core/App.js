@@ -8,6 +8,7 @@ import { observerWorld } from '../physics/observer.js';
 import { createGround } from '../scene/Ground.js';
 import { STANDABLE } from '../data/locations.js';
 import { OrbitAudio } from '../audio/OrbitAudio.js';
+import { deviceProfile } from './quality.js';
 import { Scale } from './Scale.js';
 import { Frame } from './Frame.js';
 import { loadTextures } from './textures.js';
@@ -50,8 +51,9 @@ const _pointer = new Vector2();
  */
 export class App {
 
-	constructor( canvas ) {
+	constructor( canvas, options = {} ) {
 		this.canvas = canvas;
+		this.profile = deviceProfile( options.quality );
 		this.scene = new Scene();
 		this.clock = new SimClock( new Date() );
 		this.scale = new Scale();
@@ -105,14 +107,14 @@ export class App {
 
 	async init( onProgress ) {
 
-		this.renderer = await createRenderer( this.canvas );
+		this.renderer = await createRenderer( this.canvas, this.profile );
 		this.usingWebGPU = isWebGPU( this.renderer );
 
 		const { textures, missing } = await loadTextures( onProgress );
 		this.textures = textures;
 		this.missingTextures = missing;
 
-		this.system = new SolarSystem( textures, { timeUniform: this.timeUniform } );
+		this.system = new SolarSystem( textures, { timeUniform: this.timeUniform, profile: this.profile } );
 		this.scene.add( this.system.root );
 
 		this.starfield = createStarfield( textures );
